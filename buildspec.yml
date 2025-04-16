@@ -5,17 +5,19 @@ phases:
     runtime-versions:
       java: corretto21
     commands:
-      - echo installing maven on elastic beanstalk
+      - echo Installing Maven...
       - yum install -y maven
   build:
     commands:
-      - echo Build Started -`date`
-      - mvn clean package -DskipTests #uncomment later once the test cases are written
+      - echo Build started on `date`
+      - mvn clean package -DskipTests
   post_build:
     commands:
-      - echo Build Completed - `date`
+      - echo Build completed on `date`
       - mkdir -p output
-      - cp target/*.jar output/ImgurApp.jar
+      - cp target/*.jar output/application.jar
+
 artifacts:
   files:
-    - output/ImgurApp.jar
+    - application.jar
+  base-directory: output
