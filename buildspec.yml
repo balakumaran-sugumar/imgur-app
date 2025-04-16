@@ -1,0 +1,21 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto21
+    commands:
+      - echo installing maven on elastic beanstalk
+      - yum install -y maven
+  build:
+    commands:
+      - echo Build Started -`date`
+      - mvn clean package -DskipTests #uncomment later once the test cases are written
+  post_build:
+    commands:
+      - echo Build Completed - `date`
+      - mkdir -p output
+      - cp target/*.jar output/ImgurApp.jar
+artifacts:
+  files:
+    - output/ImgurApp.jar
