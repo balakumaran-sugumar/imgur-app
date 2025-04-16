@@ -1,0 +1,35 @@
+spring:
+  application:
+   name: ImgurApp
+
+---
+# HSQLDB Configuration
+spring:
+  datasource:
+    url: jdbc:hsqldb:mem:imageapp
+    username: username
+    password:
+    driver-class-name: org.hsqldb.jdbc.JDBCDriver
+    hikari:
+      auto-commit: true
+      minimum-idle: 5
+      maximum-pool-size: 20 # keeping it to default 20
+
+---
+# Hibernate configuration
+spring:
+  jpa:
+    database-platform: org.hibernate.dialect.HSQLDialect
+
+---
+spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+# for IMGUR
+imgur:
+  client-id: 6bb41ee57a70323
+
+
