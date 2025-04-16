@@ -1,6 +1,5 @@
 package com.syf.imgurapp.imgurapp.controller;
 
-
 import com.syf.imgurapp.imgurapp.exception.ImageAppException;
 import com.syf.imgurapp.imgurapp.model.ImageResponse;
 import com.syf.imgurapp.imgurapp.repository.entity.User;
@@ -12,6 +11,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+// a repo merge to the main github branch will trigger a webhook on AWS codePipeline - which will pull in the lastest code
+// build it and deploy to elasticBeanStalk where the application is accessible
 
 @RestController
 @RequestMapping("/api/media")
