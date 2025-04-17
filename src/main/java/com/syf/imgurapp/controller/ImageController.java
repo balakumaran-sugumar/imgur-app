@@ -5,6 +5,7 @@ import com.syf.imgurapp.model.ImageDownloadDTO;
 import com.syf.imgurapp.model.ImageResponse;
 import com.syf.imgurapp.repository.entity.User;
 import com.syf.imgurapp.service.IImageService;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -15,6 +16,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
 
 // a repo merge to the main github branch will trigger a webhook on AWS codePipeline - which will pull in the lastest code
 // build it and deploy to elasticBeanStalk where the application is accessible
@@ -31,6 +34,12 @@ public class ImageController {
     @PostMapping("/upload")
     public ResponseEntity<ImageResponse> uploadImage(@RequestParam("file")MultipartFile file,
                                                      @AuthenticationPrincipal UserDetails userDetails) throws ImageAppException {
+       //for file checks only
+       if(null == file || file.isEmpty()){
+           ImageResponse imageResponse = ImageResponse.builder().message("File Cannot be emty")
+                   .dateTime(LocalDateTime.now()).build();
+           return ResponseEntity.badRequest().body(imageResponse);
+       }
        ImageResponse imageResponse = imageService.uploadImage(file, userDetails);
        return new ResponseEntity<>(imageResponse, HttpStatus.OK);
     }
@@ -44,7 +53,8 @@ public class ImageController {
 
     @CacheEvict(value = "imgurCache", key = "#userDetails.username")
     @DeleteMapping("/{imageId}")
-    public ResponseEntity<ImageResponse> deleteImageDtls(@PathVariable Long imageId, @AuthenticationPrincipal UserDetails userDetails){
+    public ResponseEntity<ImageResponse> deleteImageDtls(@PathVariable @NotNull Long imageId,
+                                                         @AuthenticationPrincipal UserDetails userDetails){
         ImageResponse imageResponse = imageService.deleteImage(imageId, userDetails.getUsername());
         return new ResponseEntity<>(imageResponse, HttpStatus.OK);
     }
@@ -52,7 +62,7 @@ public class ImageController {
     @Cacheable(value = "imgurDownloadCache")
     @GetMapping("/download/{imageId}")
     public ResponseEntity<byte[]> downloadImage(@AuthenticationPrincipal UserDetails userDetails, @PathVariable
-    Long imageId) throws ImageAppException {
+    @NotNull Long imageId) throws ImageAppException {
         ImageDownloadDTO imageDetails = imageService.downloadImage(imageId, userDetails.getUsername());
 
         HttpHeaders headers = new HttpHeaders();

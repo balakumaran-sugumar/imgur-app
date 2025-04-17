@@ -39,8 +39,25 @@ spring:
     caffeine:
       spec: maximumSize=500,expireAfterWrite=10m
 
+---
+# for Kafka configuration
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: imgur-app-clients
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 # for IMGUR
 imgur:
   client-id: 6bb41ee57a70323
+  kafka-topic: imgur-events
 
 

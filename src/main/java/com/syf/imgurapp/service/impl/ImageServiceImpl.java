@@ -1,5 +1,6 @@
 package com.syf.imgurapp.service.impl;
 
+import com.syf.imgurapp.config.KafkaProducer;
 import com.syf.imgurapp.exception.ImageAppException;
 import com.syf.imgurapp.model.ImageDownloadDTO;
 import com.syf.imgurapp.model.ImageResponse;
@@ -9,6 +10,7 @@ import com.syf.imgurapp.repository.entity.Image;
 import com.syf.imgurapp.repository.entity.User;
 import com.syf.imgurapp.service.IImageService;
 import com.syf.imgurapp.transmitter.IImageImgurTransmitter;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +34,18 @@ public class ImageServiceImpl implements IImageService {
     private final UserRepository userRepository;
 
     private final ImageRepository imageRepository;
+
+    private final KafkaProducer kafkaProducer;
+
+    ExecutorService executor = Executors.newFixedThreadPool(5);
+
+    @PreDestroy
+    public void preDestroy(){
+        if(null != executor){
+            executor.shutdown();
+        }
+    }
+
     @Override
     public ImageResponse uploadImage(MultipartFile file,
                                      UserDetails userDetails ) throws ImageAppException {
@@ -49,6 +66,9 @@ public class ImageServiceImpl implements IImageService {
                     .build();
 
             imageRepository.save(image);
+            //send the details to kafka
+            CompletableFuture.runAsync(() -> kafkaProducer.sendMessage(file.getName(), userDetails.getUsername())
+                    , executor);
         }catch (IOException ioException){
             log.error("Could not upload the image to imgur : ex ", ioException);
             throw new ImageAppException("Not able to upload image to imgur");
