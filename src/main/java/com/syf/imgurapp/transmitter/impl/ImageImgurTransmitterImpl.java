@@ -5,18 +5,24 @@ import com.syf.imgurapp.transmitter.IImageImgurTransmitter;
 import com.syf.imgurapp.transmitter.UrlConnectionProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +43,7 @@ public class ImageImgurTransmitterImpl implements IImageImgurTransmitter {
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromMultipartData(body))
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::handleErrorResponse)
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
     }
@@ -46,6 +53,7 @@ public class ImageImgurTransmitterImpl implements IImageImgurTransmitter {
         return webClient.get()
                 .uri("/image/" + deleteHash)
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::handleErrorResponse)
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
     }
@@ -55,6 +63,7 @@ public class ImageImgurTransmitterImpl implements IImageImgurTransmitter {
         webClient.delete()
                 .uri("/image/" + deleteHash)
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::handleErrorResponse)
                 .toBodilessEntity()
                 .block();
     }
@@ -73,4 +82,28 @@ public class ImageImgurTransmitterImpl implements IImageImgurTransmitter {
             throw new ImageAppException("Not able to retrieve image from imgur");
         }
     }
+
+    private Mono<Throwable> handleErrorResponse(ClientResponse clientResponse){
+        return clientResponse.bodyToMono(String.class)
+                .switchIfEmpty(Mono.just("No Error details in the exception"))
+                .flatMap(error -> {
+                    HttpStatusCode status = clientResponse.statusCode();
+                    String errorMessage = "";
+                    switch(status){
+                        case TOO_MANY_REQUESTS:
+                            errorMessage = "Too Many request to Imgur, request could not proceed";
+                            break;
+                        case BAD_REQUEST:
+                            errorMessage = "Bad request 4xx";
+                            break;
+                        case SERVICE_UNAVAILABLE:
+                            errorMessage = "Service is unavailable";
+                            break;
+                        default:
+                            errorMessage = "Error while processing request with imgur";
+                    }
+                    return Mono.error(new ImageAppException(errorMessage));
+                });
+    }
+
 }

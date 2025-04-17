@@ -25,19 +25,25 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public UserRegistrationResponse register(UserDTO user) throws ImageAppException {
-
-        //check if user already exists
-        Optional<User> dbUser = userRepository.findByUserName(user.getUsername());
-        if(dbUser.isPresent()){
-            log.error("User already exists : " + user.getUsername());
-            throw new UserAlreadyExistsException("User " + user.getUsername() +" Already exists");
+        User userResp;
+        try {
+            //check if user already exists
+            Optional<User> dbUser = userRepository.findByUserName(user.getUsername());
+            if (dbUser.isPresent()) {
+                log.error("User already exists : " + user.getUsername());
+                throw new UserAlreadyExistsException("User " + user.getUsername() + " Already exists");
+            }
+            //proceeding to register the user
+            User userDtls = userInfoTransformer.transformUserInfo(user);
+            //Addition resiliency can be added here using resilience4j and retryable
+            userResp = userRepository.save(userDtls);
+            log.info("User registration service call was successful for user {}", user.getUsername());
+        }catch (ImageAppException ex){
+            throw ex;
+        }catch (Exception ex){
+            log.error("Could not register user UserName {}, reason {}", user.getUsername(), ex.getMessage());
+            throw new ImageAppException("User was not registered, retry later");
         }
-
-        //proceeding to register the user
-        User userDtls = userInfoTransformer.transformUserInfo(user);
-
-        //TODO:: resiliency to be implemented (will check)
-        User userResp = userRepository.save(userDtls);
 
         return UserRegistrationResponse.builder()
                 .userId(userResp.getUserId()).message("User was successfully registered")

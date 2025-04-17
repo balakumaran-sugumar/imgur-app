@@ -11,9 +11,9 @@ public interface IImageService {
 
     ImageResponse uploadImage(MultipartFile file, UserDetails userDetails) throws ImageAppException;
 
-    User userImageInformation(String username);
+    User userImageInformation(String username) throws ImageAppException;
 
-    ImageResponse deleteImage(Long imageId, String username);
+    ImageResponse deleteImage(Long imageId, String username) throws ImageAppException;
 
     ImageDownloadDTO downloadImage(Long imageId, String username) throws ImageAppException;
 

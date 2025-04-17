@@ -68,6 +68,7 @@ public class ImageImgurTransmitterTest {
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(expectedResponse));
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         Map<String, Object> result = imageImgurTransmitter.uploadImage(multipartFile);
         assertEquals(expectedResponse, result);
     }
@@ -82,7 +83,7 @@ public class ImageImgurTransmitterTest {
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(expectedResponse));
-
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         Map<String, Object> result = imageImgurTransmitter.getImage(deleteHash);
         assertEquals(expectedResponse, result);
     }
@@ -94,6 +95,7 @@ public class ImageImgurTransmitterTest {
         when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         imageImgurTransmitter.deleteImage(deleteHash);
         verify(responseSpec).toBodilessEntity();
     }

@@ -96,7 +96,7 @@ public class ImageServiceImplTest {
     }
 
     @Test
-    void userImageInformationSuccess() {
+    void userImageInformationSuccess() throws ImageAppException {
         when(userRepository.findByUserName(anyString())).thenReturn(Optional.of(testUser));
         User result = imageService.userImageInformation("testuser");
         assertNotNull(result);
@@ -105,7 +105,7 @@ public class ImageServiceImplTest {
     }
 
     @Test
-    void deleteImageSuccess() {
+    void deleteImageSuccess() throws ImageAppException {
         Image testImage = new Image();
         testImage.setDeleteHash("abc123");
 

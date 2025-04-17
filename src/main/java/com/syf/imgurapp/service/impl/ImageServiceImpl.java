@@ -54,19 +54,16 @@ public class ImageServiceImpl implements IImageService {
             log.info("Response from imgur : " + imgurResponse.toString());
 
             User user = userRepository.findByUserName(userDetails.getUsername()).orElseThrow();
+            log.debug("Retrieved user details for upload image : user {}", user.getUserName());
+
             //storing the information into the image table
             @SuppressWarnings("unchecked") //as the structure in unknown from imgur
             Map<String, Object> imgurData = (Map<String, Object>)imgurResponse.get("data");
 
-            Image image = Image.builder()
-                    .deleteHash((String)imgurData.get("deletehash"))
-                    .url((String)imgurData.get("link"))
-                    .imgurId((String)imgurData.get("id"))
-                    .user(user)
-                    .build();
+            imageRepository.save(getImageDTO(imgurData, user));
+            log.info("Successfully uploaded image for user {}", user.getUserName());
 
-            imageRepository.save(image);
-            //send the details to kafka
+            //asynchronously send message kafka
             CompletableFuture.runAsync(() -> kafkaProducer.sendMessage(file.getName(), userDetails.getUsername())
                     , executor);
         }catch (IOException ioException){
@@ -80,22 +77,36 @@ public class ImageServiceImpl implements IImageService {
     }
 
     @Override
-    public User userImageInformation(String username) {
+    public User userImageInformation(String username) throws ImageAppException {
         log.info("Calling database to get details, cache miss here");
-        User user = userRepository.findByUserName(username).orElseThrow();
+        User user;
+        try {
+             user = userRepository.findByUserName(username).orElseThrow();
+        }catch (Exception ex){
+            throw new ImageAppException("Could not fetch details from database reason: " + ex.getMessage());
+        }
+        log.info("Successfully retrieved the data from user repository");
         return user;
     }
 
     @Override
-    public ImageResponse deleteImage(Long imageId, String username) {
+    public ImageResponse deleteImage(Long imageId, String username) throws ImageAppException {
         //get the file details
-        //throw custom exception
-        Image imageDtls = imageRepository.findById(imageId).orElseThrow(() -> new RuntimeException("Could not find image"));
-        //delete from imgur
-        transmitter.deleteImage(imageDtls.getDeleteHash());
+        try {
+            Image imageDtls = imageRepository.findById(imageId).orElseThrow(() -> new RuntimeException("Could not find image"));
+            log.debug("Fetched image details from database for imageId {}", imageId);
 
-        //delete from database as well
-        imageRepository.delete(imageDtls);
+            //delete from imgur
+            transmitter.deleteImage(imageDtls.getDeleteHash());
+            log.debug("deleted data on Imgur for imageId {}", imageId);
+
+            //delete from database as well
+            imageRepository.delete(imageDtls);
+            log.info("deleted data for ImageId {} user {}", imageId, username);
+        }catch (Exception ex){
+            log.error("Not able to delete image reason {}", ex.getMessage());
+            throw new ImageAppException("Not able to delete image {}" + ex.getMessage());
+        }
         return ImageResponse.builder()
                 .id(String.valueOf(imageId))
                 .dateTime(LocalDateTime.now())
@@ -104,7 +115,6 @@ public class ImageServiceImpl implements IImageService {
     }
 
     @Override
-    //TODO:: handle exceptions
     public ImageDownloadDTO downloadImage(Long imageId, String username) throws ImageAppException {
         //get the image from the image entity
         Image image = imageRepository.findById(imageId).orElseThrow();
@@ -112,5 +122,14 @@ public class ImageServiceImpl implements IImageService {
         byte[] imageBytes = transmitter.downloadImage(image.getUrl());
 
         return ImageDownloadDTO.builder().imageData(imageBytes).build();
+    }
+
+    private Image getImageDTO(Map<String, Object> imgurData, User user){
+       return Image.builder()
+                .deleteHash((String)imgurData.get("deletehash"))
+                .url((String)imgurData.get("link"))
+                .imgurId((String)imgurData.get("id"))
+                .user(user)
+                .build();
     }
 }
