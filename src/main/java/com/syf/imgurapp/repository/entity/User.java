@@ -12,6 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "USERS")
 public class User {
 
     @Id

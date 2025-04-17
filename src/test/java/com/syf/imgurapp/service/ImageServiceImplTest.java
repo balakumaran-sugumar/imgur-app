@@ -68,14 +68,14 @@ public class ImageServiceImplTest {
     }
 
     @Test
-    void uploadImage_IOException_ThrowsImageAppException() throws Exception {
+    void uploadImageIOExceptionThrowsImageAppException() throws Exception {
         when(transmitter.uploadImage(any())).thenThrow(IOException.class);
         assertThrows(ImageAppException.class, () -> {
             imageService.uploadImage(mockFile, userDetails);
         });
     }
     @Test
-    void uploadImage_Success() throws Exception {
+    void uploadImageSuccess() throws Exception {
         Map<String, Object> imgurResponse = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
         data.put("deletehash", "deletehash");
@@ -96,7 +96,7 @@ public class ImageServiceImplTest {
     }
 
     @Test
-    void userImageInformation_Success() {
+    void userImageInformationSuccess() {
         when(userRepository.findByUserName(anyString())).thenReturn(Optional.of(testUser));
         User result = imageService.userImageInformation("testuser");
         assertNotNull(result);
@@ -105,7 +105,7 @@ public class ImageServiceImplTest {
     }
 
     @Test
-    void deleteImage_Success() {
+    void deleteImageSuccess() {
         Image testImage = new Image();
         testImage.setDeleteHash("abc123");
 
@@ -120,7 +120,7 @@ public class ImageServiceImplTest {
     }
 
     @Test
-    void downloadImage_Success() throws Exception {
+    void downloadImageSuccess() throws Exception {
         Image testImage = new Image();
         testImage.setUrl("http://imgur.com/test.jpg");
         byte[] testData = "test image data".getBytes();

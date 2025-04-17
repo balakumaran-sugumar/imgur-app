@@ -2,6 +2,7 @@ package com.syf.imgurapp.transmitter.impl;
 
 import com.syf.imgurapp.exception.ImageAppException;
 import com.syf.imgurapp.transmitter.IImageImgurTransmitter;
+import com.syf.imgurapp.transmitter.UrlConnectionProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
@@ -25,6 +26,8 @@ import java.util.Map;
 public class ImageImgurTransmitterImpl implements IImageImgurTransmitter {
 
     private final WebClient webClient;
+
+    private final UrlConnectionProvider urlConnectionProvider;
 
     @Override
     public Map<java.lang.String,java.lang.Object> uploadImage(MultipartFile file) throws IOException {
@@ -61,25 +64,16 @@ public class ImageImgurTransmitterImpl implements IImageImgurTransmitter {
 
     @Override
     public byte[] downloadImage(String imgUrl) throws ImageAppException {
-        try {
-            URI uri = URI.create(imgUrl);
-            URL url = uri.toURL();
-
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-
-            try (InputStream inputStream = connection.getInputStream();
-                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                //restricting to 8kb of data
-                byte[] buffer = new byte[8192];
-                while ((inputStream.read(buffer)) != -1) {
-                    baos.write(buffer);
-                }
-                return baos.toByteArray();
+        try (InputStream inputStream = urlConnectionProvider.openStream(imgUrl);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, bytesRead);
             }
-        }catch (IOException urlException){
-            //log.error("Caught in execution while retrieving the image from Imgur ex: {}", urlException.getMessage());
-            throw new ImageAppException("Not able to retrieve image from imgur, try again later");
+            return baos.toByteArray();
+        } catch (IOException urlException) {
+            throw new ImageAppException("Not able to retrieve image from imgur");
         }
     }
 }
