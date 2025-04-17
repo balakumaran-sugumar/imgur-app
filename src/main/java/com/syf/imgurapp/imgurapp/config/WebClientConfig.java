@@ -11,6 +11,7 @@ public class WebClientConfig {
     @Value("${imgur.client-id}")
     private String clientId;
 
+    //TODO:: Implement connection pooling
     @Bean
     public WebClient imgurWebClient(){
         return WebClient.builder()

@@ -31,7 +31,8 @@ public class SpringSecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder(); //Not a recommended way to store passwords,
+        return new BCryptPasswordEncoder();
+        //Not a recommended way to store passwords,
         // its considered only for this assignment for simplicity, one of the ideal ways is to use
         // Symmetric AES 256 keys with 65k rounds for passwords
     }

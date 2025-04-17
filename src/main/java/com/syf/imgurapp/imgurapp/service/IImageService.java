@@ -1,6 +1,7 @@
 package com.syf.imgurapp.imgurapp.service;
 
 import com.syf.imgurapp.imgurapp.exception.ImageAppException;
+import com.syf.imgurapp.imgurapp.model.ImageDownloadDTO;
 import com.syf.imgurapp.imgurapp.model.ImageResponse;
 import com.syf.imgurapp.imgurapp.repository.entity.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,5 +14,7 @@ public interface IImageService {
     User userImageInformation(String username);
 
     ImageResponse deleteImage(Long imageId, String username);
+
+    ImageDownloadDTO downloadImage(Long imageId, String username) throws ImageAppException;
 
 }

@@ -1,6 +1,7 @@
 package com.syf.imgurapp.imgurapp.service.impl;
 
 import com.syf.imgurapp.imgurapp.exception.ImageAppException;
+import com.syf.imgurapp.imgurapp.model.ImageDownloadDTO;
 import com.syf.imgurapp.imgurapp.model.ImageResponse;
 import com.syf.imgurapp.imgurapp.repository.ImageRepository;
 import com.syf.imgurapp.imgurapp.repository.UserRepository;
@@ -60,6 +61,7 @@ public class ImageServiceImpl implements IImageService {
 
     @Override
     public User userImageInformation(String username) {
+        log.info("Calling database to get details, cache miss here");
         User user = userRepository.findByUserName(username).orElseThrow();
         return user;
     }
@@ -79,5 +81,16 @@ public class ImageServiceImpl implements IImageService {
                 .dateTime(LocalDateTime.now())
                 .message(imageId + " was deleted")
                 .build();
+    }
+
+    @Override
+    //TODO:: handle exceptions
+    public ImageDownloadDTO downloadImage(Long imageId, String username) throws ImageAppException {
+        //get the image from the image entity
+        Image image = imageRepository.findById(imageId).orElseThrow();
+
+        byte[] imageBytes = transmitter.downloadImage(image.getUrl());
+
+        return ImageDownloadDTO.builder().imageData(imageBytes).build();
     }
 }

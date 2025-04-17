@@ -1,3 +1,4 @@
+# spring application name
 spring:
   application:
    name: ImgurApp
@@ -22,11 +23,21 @@ spring:
     database-platform: org.hibernate.dialect.HSQLDialect
 
 ---
+# for imgur image upload functionality
 spring:
   servlet:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
+
+---
+# adding cache manager for faster retrieval
+spring:
+  cache:
+    type: caffeine
+    cache-names: imgurCache, userCache, imgurDownloadCache
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=10m
 
 # for IMGUR
 imgur:

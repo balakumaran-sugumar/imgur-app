@@ -71,6 +71,17 @@
             <version>3.17.0</version>
         </dependency>
 
+        <!-- Adding caffeine caching for cached retrieval: Helps in faster retrieval for handling high throughput-->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
         <!-- for unit testing the code -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
