@@ -66,7 +66,7 @@ public class ImageServiceImpl implements IImageService {
             //asynchronously send message kafka
             CompletableFuture.runAsync(() -> kafkaProducer.sendMessage(file.getName(), userDetails.getUsername())
                     , executor);
-        }catch (IOException ioException){
+        }catch (Exception ioException){
             log.error("Could not upload the image to imgur : ex ", ioException);
             throw new ImageAppException("Not able to upload image to imgur");
         }
@@ -81,7 +81,8 @@ public class ImageServiceImpl implements IImageService {
         log.info("Calling database to get details, cache miss here");
         User user;
         try {
-             user = userRepository.findByUserName(username).orElseThrow();
+             user = userRepository.findByUserName(username).orElseThrow(() -> new ImageAppException("No user found, " +
+                     "consider registering"));
         }catch (Exception ex){
             throw new ImageAppException("Could not fetch details from database reason: " + ex.getMessage());
         }
@@ -105,7 +106,7 @@ public class ImageServiceImpl implements IImageService {
             log.info("deleted data for ImageId {} user {}", imageId, username);
         }catch (Exception ex){
             log.error("Not able to delete image reason {}", ex.getMessage());
-            throw new ImageAppException("Not able to delete image {}" + ex.getMessage());
+            throw new ImageAppException("Not able to delete image " + ex.getMessage());
         }
         return ImageResponse.builder()
                 .id(String.valueOf(imageId))
@@ -117,10 +118,15 @@ public class ImageServiceImpl implements IImageService {
     @Override
     public ImageDownloadDTO downloadImage(Long imageId, String username) throws ImageAppException {
         //get the image from the image entity
-        Image image = imageRepository.findById(imageId).orElseThrow();
-
-        byte[] imageBytes = transmitter.downloadImage(image.getUrl());
-
+        Image image = imageRepository.findById(imageId).orElseThrow(() ->
+                new ImageAppException("No images found for this user: " + username));
+        byte[] imageBytes;
+        try {
+            imageBytes = transmitter.downloadImage(image.getUrl());
+        }catch (Exception ex){
+            log.error("Error while download image from Imgur");
+            throw new ImageAppException("Could not download image from Imgur");
+        }
         return ImageDownloadDTO.builder().imageData(imageBytes).build();
     }
 
